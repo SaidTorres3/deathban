@@ -12,6 +12,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -63,7 +66,9 @@ public class DeathListener implements Listener {
                 p.setGameMode(GameMode.SURVIVAL);
                 p.setHealth(20.0);
                 p.setFoodLevel(20);
-                p.teleport(p.getWorld().getSpawnLocation());
+                p.addPotionEffects(Arrays.asList(
+                        new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, 5, 10)));
+                Scheduler.teleport(p, p.getRespawnLocation());
             }
 
         }, 1L);
@@ -73,7 +78,8 @@ public class DeathListener implements Listener {
             String legacyReason = LegacyComponentSerializer.legacySection().serialize(reasonComponent);
 
             if (doIpBan) {
-                Bukkit.getBanList(org.bukkit.BanList.Type.IP).addBan(p.getAddress().getAddress().getHostAddress(), legacyReason, finalDate, "console");
+                Bukkit.getBanList(org.bukkit.BanList.Type.IP).addBan(p.getAddress().getAddress().getHostAddress(),
+                        legacyReason, finalDate, "console");
                 Scheduler.kick(p, banReason);
             } else {
                 Bukkit.getBanList(org.bukkit.BanList.Type.NAME).addBan(p.getName(), legacyReason, finalDate, "console");

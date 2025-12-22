@@ -4,6 +4,7 @@ import com.jqshuv.deathban.DeathBan;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class Scheduler {
@@ -28,20 +29,27 @@ public class Scheduler {
                 // Try to get the EntityScheduler from the player
                 Object scheduler = player.getClass().getMethod("getScheduler").invoke(player);
                 // Folia EntityScheduler.runDelayed signature:
-                // ScheduledTask runDelayed(Plugin plugin, Consumer<ScheduledTask> task, Runnable retired, long delayTicks)
-                scheduler.getClass().getMethod("runDelayed", org.bukkit.plugin.Plugin.class, java.util.function.Consumer.class, Runnable.class, long.class)
-                        .invoke(scheduler, DeathBan.getInstance(), (java.util.function.Consumer<Object>) task -> runnable.run(), null, delayTicks);
+                // ScheduledTask runDelayed(Plugin plugin, Consumer<ScheduledTask> task,
+                // Runnable retired, long delayTicks)
+                scheduler.getClass()
+                        .getMethod("runDelayed", org.bukkit.plugin.Plugin.class, java.util.function.Consumer.class,
+                                Runnable.class, long.class)
+                        .invoke(scheduler, DeathBan.getInstance(),
+                                (java.util.function.Consumer<Object>) task -> runnable.run(), null, delayTicks);
                 return; // Success
             } catch (Exception e) {
-                DeathBan.getInstance().getLogger().warning("Folia detected but failed to use EntityScheduler: " + e.getMessage());
-                // If it fails, we don't fallback to Bukkit scheduler on Folia because it WILL throw UnsupportedOperationException
+                DeathBan.getInstance().getLogger()
+                        .warning("Folia detected but failed to use EntityScheduler: " + e.getMessage());
+                // If it fails, we don't fallback to Bukkit scheduler on Folia because it WILL
+                // throw UnsupportedOperationException
                 // Instead, we run it immediately or log a severe error
-                DeathBan.getInstance().getLogger().severe("COULD NOT SCHEDULE TASK ON FOLIA! Running immediately as fallback.");
+                DeathBan.getInstance().getLogger()
+                        .severe("COULD NOT SCHEDULE TASK ON FOLIA! Running immediately as fallback.");
                 runnable.run();
                 return;
             }
         }
-        
+
         // Fallback for Spigot/Paper
         Bukkit.getScheduler().runTaskLater(DeathBan.getInstance(), runnable, delayTicks);
     }
@@ -54,10 +62,11 @@ public class Scheduler {
         TextComponent reasonComponent = (TextComponent) DeathBan.getMiniMessage().deserialize(reason);
         try {
             // Try Paper/Adventure API first
-            // Class<?> componentClass = Class.forName("net.kyori.adventure.text.Component");
-             // Ensure Adventure is loaded
+            // Class<?> componentClass =
+            // Class.forName("net.kyori.adventure.text.Component");
+            // Ensure Adventure is loaded
             Class<?> componentClass = reasonComponent.getClass();
-            
+
             java.lang.reflect.Method kickMethod = player.getClass().getMethod("kick", componentClass);
             kickMethod.invoke(player, reasonComponent);
         } catch (Exception e) {
@@ -67,12 +76,14 @@ public class Scheduler {
         }
     }
 
-    private static boolean isClassPresent(String className) {
+    public static void teleport(Player player, Location location) {
         try {
-            Class.forName(className);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
+            // Try Paper's teleportAsync
+            java.lang.reflect.Method teleportAsync = player.getClass().getMethod("teleportAsync", Location.class);
+            teleportAsync.invoke(player, location);
+        } catch (Exception e) {
+            // Fallback to standard teleport
+            player.teleport(location);
         }
     }
 }
