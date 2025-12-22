@@ -1,7 +1,7 @@
 package com.jqshuv.deathban.utils;
 
 import com.jqshuv.deathban.DeathBan;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -58,20 +58,13 @@ public class Scheduler {
         return IS_FOLIA;
     }
 
-    public static void kick(Player player, String reason) {
-        TextComponent reasonComponent = (TextComponent) DeathBan.getMiniMessage().deserialize(reason);
+    public static void kick(Player player, Component reason) {
         try {
             // Try Paper/Adventure API first
-            // Class<?> componentClass =
-            // Class.forName("net.kyori.adventure.text.Component");
-            // Ensure Adventure is loaded
-            Class<?> componentClass = reasonComponent.getClass();
-
-            java.lang.reflect.Method kickMethod = player.getClass().getMethod("kick", componentClass);
-            kickMethod.invoke(player, reasonComponent);
-        } catch (Exception e) {
-            // Fallback to Spigot/Bukkit
-            String legacyReason = LegacyComponentSerializer.legacySection().serialize(reasonComponent);
+            player.kick(reason);
+        } catch (NoSuchMethodError | Exception e) {
+            // Fallback to Spigot/Bukkit legacy string
+            String legacyReason = LegacyComponentSerializer.legacySection().serialize(reason);
             player.kickPlayer(legacyReason);
         }
     }
